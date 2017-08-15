@@ -95,13 +95,7 @@ export default {
         let fileDataURI = fileReader.result
 
         let p = e.path
-        let lastElement = ''
-        p.some(i => {
-          if (i.className.indexOf('editor') >= 0) {
-            return true
-          }
-          lastElement = i
-        })
+        let lastElement = this.findAppendTarget(p)
         let appendTarget
         let imgTag = document.createElement('img')
         imgTag.src = fileDataURI
@@ -124,32 +118,60 @@ export default {
       }
     },
     onPaste (e) {
+      let p = e.path
+      let lastElement = this.findAppendTarget(p)
+
       let pasteText = e.clipboardData.getData('Text')
       if (/github.com/.test(pasteText)) {
         let regexp = /.*\/\/.*github\.com\/.*\/([a-z0-9]+)/g
         let id = regexp.exec(pasteText)['1']
         e.preventDefault()
-        const loadGist = (element, gistId) => {
+        const loadGist = (gistId) => {
           var callbackName = 'gist_callback'
-          window[callbackName] = function (gistData) {
-            delete window[callbackName]
+          document.getElementById(id).contentWindow[callbackName] = function (gistData) {
+            delete document.getElementById(id).contentWindow[callbackName]
             let html = '<link rel="stylesheet" href="' + gistData.stylesheet + '"></link>'
             html += gistData.div
-            element.innerHTML = html
-            script.parentNode.removeChild(script)
+            iframeDoc.document.body.innerHTML += html
+            iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px'
           }
-          var script = document.createElement('script')
+          let iframeDoc = document.getElementById(id).contentWindow
+          let script = iframeDoc.document.createElement('script')
           script.setAttribute('src', 'https://gist.github.com/' + gistId + '.json?callback=' + callbackName)
-          document.body.appendChild(script)
+          iframeDoc.document.body.appendChild(script)
         }
-        loadGist(document.querySelector('.editor'), id)
+        let iframe = document.createElement('iframe')
+        iframe.style.width = '750px'
+        iframe.setAttribute('id', id)
+        let appendTarget
+        if (!lastElement) {
+          appendTarget = document.querySelector('.editor')
+          appendTarget.appendChild(iframe)
+        } else {
+          appendTarget = lastElement.parentElement
+          appendTarget.insertBefore(iframe, lastElement)
+        }
+        loadGist(id)
       }
+    },
+    findAppendTarget (path) {
+      let lastElement = ''
+      path.some(i => {
+        if (i.className.indexOf('editor') >= 0) {
+          return true
+        }
+        lastElement = i
+      })
+      return lastElement
     }
   }
 }
 </script>
 
 <style lang="scss">
+iframe {
+  border: none;
+}
 .editor
 {
   text-align: left;
