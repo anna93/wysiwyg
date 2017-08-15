@@ -133,7 +133,10 @@ export default {
             let html = '<link rel="stylesheet" href="' + gistData.stylesheet + '"></link>'
             html += gistData.div
             iframeDoc.document.body.innerHTML += html
-            iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px'
+            setTimeout(() => {
+              iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px'
+            }, 0)
+            // script.parentNode.removeChild(script)
           }
           let iframeDoc = document.getElementById(id).contentWindow
           let script = iframeDoc.document.createElement('script')
