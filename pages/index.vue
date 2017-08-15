@@ -124,7 +124,26 @@ export default {
       }
     },
     onPaste (e) {
-      console.log(e)
+      let pasteText = e.clipboardData.getData('Text')
+      if (/github.com/.test(pasteText)) {
+        let regexp = /.*\/\/.*github\.com\/.*\/([a-z0-9]+)/g
+        let id = regexp.exec(pasteText)['1']
+        e.preventDefault()
+        const loadGist = (element, gistId) => {
+          var callbackName = 'gist_callback'
+          window[callbackName] = function (gistData) {
+            delete window[callbackName]
+            let html = '<link rel="stylesheet" href="' + gistData.stylesheet + '"></link>'
+            html += gistData.div
+            element.innerHTML = html
+            script.parentNode.removeChild(script)
+          }
+          var script = document.createElement('script')
+          script.setAttribute('src', 'https://gist.github.com/' + gistId + '.json?callback=' + callbackName)
+          document.body.appendChild(script)
+        }
+        loadGist(document.querySelector('.editor'), id)
+      }
     }
   }
 }
