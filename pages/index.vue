@@ -122,7 +122,8 @@ export default {
       let lastElement = this.findAppendTarget(p)
 
       let pasteText = e.clipboardData.getData('Text')
-      if (/github.com/.test(pasteText)) {
+      // if link is github gist
+      if (/gist.github.com/.test(pasteText)) {
         let regexp = /.*\/\/.*github\.com\/.*\/([a-z0-9]+)/g
         let id = regexp.exec(pasteText)['1']
         e.preventDefault()
@@ -155,6 +156,24 @@ export default {
           appendTarget.insertBefore(iframe, lastElement)
         }
         loadGist(id)
+      } else if (/www.youtube.com/.test(pasteText)) {
+        e.preventDefault()
+        let regexp = /.*\/watch\?v=([a-zA-Z0-9-]+)$/
+        let id = regexp.exec(pasteText)[1]
+        alert(id)
+        let iframe = document.createElement('iframe')
+        iframe.src = `https://www.youtube.com/embed/${id}?rel=0&amp;controls=0&amp;showinfo=0`
+        iframe.style.height = '450px'
+        iframe.style.width = '750px'
+        iframe.setAttribute('id', id)
+        let appendTarget
+        if (!lastElement) {
+          appendTarget = document.querySelector('.editor')
+          appendTarget.appendChild(iframe)
+        } else {
+          appendTarget = lastElement.parentElement
+          appendTarget.insertBefore(iframe, lastElement)
+        }
       }
     },
     findAppendTarget (path) {
