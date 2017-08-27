@@ -14,9 +14,7 @@
       <button @click="convertToHead('i')"><i>i</i></button>
       <button @click="convertToHead('b')"><b>b</b></button>
       <button @click="convertToHead('u')"><u>ul</u></button>
-      <button @click="addLink">href</button>
-      <button @click="convertToHead">img</button>
-      <button @click="convertToHead">code</button>
+      <button @click="convertToCode">code</button>
     </div>
     {{ articleObject }}
   </section>
@@ -37,6 +35,24 @@ export default {
     }
   },
   methods: {
+    convertToCode () {
+      // debugger // eslint-disable-line
+      console.log(window.getSelection())
+      let currentNode = window.getSelection().focusNode
+      let data = currentNode.data
+      let newNode = document.createElement('div')
+      newNode.setAttribute('class', 'pre')
+      newNode.innerHTML = data
+      // check which one to remove
+      // if parentNode is not the editor div, remove parent
+      // else remove the the current Node
+      if (currentNode.parentNode.className.indexOf('editor') >= 0) {
+        currentNode.parentNode.replaceChild(newNode, currentNode)
+      } else {
+        currentNode.parentNode.parentNode.replaceChild(newNode, currentNode.parentNode)
+      }
+      newNode.insertAdjacentHTML('afterend', '<div><br></div>')
+    },
     convertToHead (type) {
       let currentNode = window.getSelection().focusNode
       let data = currentNode.data
@@ -62,6 +78,26 @@ export default {
         // console.log(e)
         // document.execCommand('insertHTML', false, '<br><br>')
         // e.preventDefault()
+        // e.preventDefault()
+        // document.execCommand('insertHTML', false, '<br><br>')
+        // return
+        // console.log(window.getSelection())
+        let currentNode = window.getSelection().anchorNode.parentNode
+        if (currentNode.className.indexOf('pre') >= 0) {
+          e.preventDefault()
+          let selection = window.getSelection()
+          let currentNode = selection.getRangeAt(0)
+          let node = document.createElement('br')
+          // node.innerText = 't'
+          currentNode.insertNode(node)
+          // currentNode.insertNode(node)
+          // currentNode.selectNodeContents(node)
+          // currentNode.collapse(false)
+          // selection.removeAllRanges()
+          // selection.addRange(currentNode)
+          // document.execCommand('insertHTML', false, '<br><br>')
+          // document.execCommand('insertHTML', false, '<br>')
+        }
       } else {
         if (this.lastKey === 189 && e.keyCode === 32) { // - followed by space should convert into unordered list
           document.execCommand('insertUnOrderedList', false)
@@ -156,23 +192,24 @@ export default {
           appendTarget.insertBefore(iframe, lastElement)
         }
         loadGist(id)
-      } else if (/www.youtube.com/.test(pasteText)) {
+      } else if (/http/.test(pasteText)) {
         e.preventDefault()
-        let regexp = /.*\/watch\?v=([a-zA-Z0-9-]+)$/
-        let id = regexp.exec(pasteText)[1]
-        alert(id)
-        let iframe = document.createElement('iframe')
-        iframe.src = `https://www.youtube.com/embed/${id}?rel=0&amp;controls=0&amp;showinfo=0`
-        iframe.style.height = '450px'
-        iframe.style.width = '750px'
-        iframe.setAttribute('id', id)
+        let link = document.createElement('a')
+        link.setAttribute('href', pasteText)
+        link.setAttribute('class', 'embedly-card')
+        link.setAttribute('data-card-controls', 0)
+        let script = document.createElement('script')
+        script.setAttribute('async', true)
+        script.setAttribute('src', '//cdn.embedly.com/widgets/platform.js')
         let appendTarget
         if (!lastElement) {
           appendTarget = document.querySelector('.editor')
-          appendTarget.appendChild(iframe)
+          appendTarget.appendChild(link)
+          appendTarget.appendChild(script)
         } else {
           appendTarget = lastElement.parentElement
-          appendTarget.insertBefore(iframe, lastElement)
+          appendTarget.insertBefore(link, lastElement)
+          appendTarget.insertBefore(script, lastElement)
         }
       }
     },
@@ -191,6 +228,10 @@ export default {
 </script>
 
 <style lang="scss">
+.pre {
+  padding: 5px 5px 5px 20px;
+  background: #cecece;
+}
 iframe {
   border: none;
 }
