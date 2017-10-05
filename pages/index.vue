@@ -11,9 +11,6 @@
     <div class="toolbar">
       <button @click="convertToHead('h2')">h2</button>
       <button @click="convertToHead('h3')">h3</button>
-      <button @click="convertToHead('i')"><i>i</i></button>
-      <button @click="convertToHead('b')"><b>b</b></button>
-      <button @click="convertToHead('u')"><u>ul</u></button>
       <button @click="convertToCode">code</button>
     </div>
     {{ articleObject }}
@@ -36,13 +33,15 @@ export default {
   },
   methods: {
     convertToCode () {
+      // this function converts the selected text/or the current block
+      // into a code block
       // debugger // eslint-disable-line
-      console.log(window.getSelection())
       let currentNode = window.getSelection().focusNode
       let data = currentNode.data
       let newNode = document.createElement('div')
       newNode.setAttribute('class', 'pre')
       newNode.innerHTML = data
+      // replace current content by newly generated code block 
       // check which one to remove
       // if parentNode is not the editor div, remove parent
       // else remove the the current Node
@@ -67,6 +66,8 @@ export default {
       document.execCommand('insertHTML', false, `<${type}>${data}</${type}>`)
     },
     getSelection (e, isMouse) {
+      // this gets called everytime a click or a selection happens in the editor.
+      // this method helps in converting to ul and ol and breaking lines consistently on return key
       if (isMouse) {
         this.selection = window.getSelection()
       } else if (e.shiftKey === true && /Arrow/.test(e.code)) {
@@ -75,28 +76,13 @@ export default {
         // TODO: the behavior of enter key should depend on enclosing tags of cursor
         // for example in list tags it should create new li and inside h1 it should split h1 and a new
         // line should be created from the rest
-        // console.log(e)
-        // document.execCommand('insertHTML', false, '<br><br>')
-        // e.preventDefault()
-        // e.preventDefault()
-        // document.execCommand('insertHTML', false, '<br><br>')
-        // return
-        // console.log(window.getSelection())
         let currentNode = window.getSelection().anchorNode.parentNode
         if (currentNode.className.indexOf('pre') >= 0) {
           e.preventDefault()
           let selection = window.getSelection()
           let currentNode = selection.getRangeAt(0)
           let node = document.createElement('br')
-          // node.innerText = 't'
           currentNode.insertNode(node)
-          // currentNode.insertNode(node)
-          // currentNode.selectNodeContents(node)
-          // currentNode.collapse(false)
-          // selection.removeAllRanges()
-          // selection.addRange(currentNode)
-          // document.execCommand('insertHTML', false, '<br><br>')
-          // document.execCommand('insertHTML', false, '<br>')
         }
       } else {
         if (this.lastKey === 189 && e.keyCode === 32) { // - followed by space should convert into unordered list
@@ -106,12 +92,12 @@ export default {
         }
         this.lastKey = e.keyCode
       }
-      // console.log(e)
       if (!isMouse) {
         this.updateArticleObject()
       }
     },
     updateArticleObject () {
+      // for future use, this article object will be used to sync the text with the server side
       this.articleObject = []
       let editor = this.$refs.editor
       for (let key = 0; key < editor.children.length; ++key) {
@@ -123,6 +109,7 @@ export default {
       this.articleObject = JSON.parse(JSON.stringify(this.articleObject))
     },
     imageDragOver (e) {
+      // allows drag and drop of images in the text area
       let file = e.dataTransfer.files
       let fileReader = new FileReader()
       fileReader.readAsDataURL(file[0])
@@ -146,6 +133,8 @@ export default {
       }, false)
     },
     addLink (e) {
+      // for now this method asks for prompt to add link to a pre selected text
+      // TODO: Use a nice html modal for link prompt
       let text = window.getSelection().toString()
       if (text.length) {
         let link = window.prompt('Enter link')
@@ -154,11 +143,12 @@ export default {
       }
     },
     onPaste (e) {
+      // Using embedly to convert links to preview cards
       let p = e.path
       let lastElement = this.findAppendTarget(p)
 
       let pasteText = e.clipboardData.getData('Text')
-      // if link is github gist
+      // if link is github gist, do not use embedly, use githubs own script to render gist snippet
       if (/gist.github.com/.test(pasteText)) {
         let regexp = /.*\/\/.*github\.com\/.*\/([a-z0-9]+)/g
         let id = regexp.exec(pasteText)['1']
@@ -193,6 +183,7 @@ export default {
         }
         loadGist(id)
       } else if (/http/.test(pasteText)) {
+        // use embedly to render other links as cards
         e.preventDefault()
         let link = document.createElement('a')
         link.setAttribute('href', pasteText)
